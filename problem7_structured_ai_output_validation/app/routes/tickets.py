@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
+from app.exceptions import InvalidAIResponseError
 from app.models import TicketClassification, TicketRequest
 from app.providers.ai_classifier import AIClassifier
 from app.services.ticket_service import TicketService
@@ -16,5 +17,11 @@ service = TicketService(classifier)
     response_model=TicketClassification,
 )
 async def classify_ticket(request: TicketRequest) -> TicketClassification:
-    result = await service.classify_ticket(request.text)
+    try:
+        result = await service.classify_ticket(request.text)
+    except InvalidAIResponseError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="AI provider returned an invalid response",
+        ) from exc
     return TicketClassification(**result)

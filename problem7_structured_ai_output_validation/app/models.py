@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TicketRequest(BaseModel):
@@ -8,6 +8,8 @@ class TicketRequest(BaseModel):
 
 
 class TicketClassification(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
     category: Literal["billing", "technical", "account"]
     priority: Literal["low", "medium", "high"]
-    summary: str
+    summary: str = Field(min_length=1)
