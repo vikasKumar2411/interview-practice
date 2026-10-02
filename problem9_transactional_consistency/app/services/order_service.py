@@ -10,14 +10,14 @@ class OrderService:
         customer_id: int,
         item: str,
     ) -> dict:
-        order = await self.repository.create_order(
-            customer_id,
-            item,
-        )
+        async with self.repository.transaction():
+            order = await self.repository.create_order(
+                customer_id,
+                item,
+            )
+            await self.repository.create_audit_event(
+                order["order_id"],
+                "order_created",
+            )
 
-        await self.repository.create_audit_event(
-            order["order_id"],
-            "order_created",
-        )
-
-        return order
+            return order

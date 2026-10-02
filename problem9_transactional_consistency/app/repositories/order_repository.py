@@ -1,8 +1,29 @@
+import asyncio
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
+
 class OrderRepository:
     def __init__(self) -> None:
         self.orders: dict[int, dict] = {}
         self.audit_events: list[dict] = []
         self._next_order_id = 1
+        self._transaction_lock = asyncio.Lock()
+
+    @asynccontextmanager
+    async def transaction(self) -> AsyncIterator[None]:
+        async with self._transaction_lock:
+            orders = self.orders.copy()
+            audit_events = self.audit_events.copy()
+            next_order_id = self._next_order_id
+            try:
+                yield
+            except BaseException:
+                self.orders.clear()
+                self.orders.update(orders)
+                self.audit_events[:] = audit_events
+                self._next_order_id = next_order_id
+                raise
 
     async def create_order(
         self,
